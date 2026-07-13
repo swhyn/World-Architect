@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArchWorld | 방구석 세계 건축 탐험</title>
+    <!-- 라이브러리 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;700&display=swap');
+        body { font-family: 'Pretendard', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .map-card:hover { transform: translateY(-10px) scale(1.02); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .character-slot { width: 60px; height: 60px; border-radius: 50%; border: 2px dashed #475569; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        .character-active { border: 2px solid #38bdf8; background: #075985; color: white; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    </style>
+</head>
+<body class="overflow-hidden">
+
+    <div class="flex h-screen w-full">
+        <!-- 사이드바: 내 컬렉션 -->
+        <aside class="w-20 lg:w-64 glass h-full p-6 flex flex-col gap-8 hidden md:flex">
+            <div class="text-2xl font-bold text-sky-400 mb-4"><i class="fa-solid fa-archway mr-2"></i>ArchWorld</div>
+            
+            <div class="flex-1">
+                <h3 class="text-xs uppercase tracking-widest text-slate-400 mb-4 font-bold">나의 수집 캐릭터</h3>
+                <div id="characterGrid" class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                    <!-- 캐릭터 아이콘들이 여기에 생성됨 -->
+                </div>
+            </div>
+
+            <div class="p-4 bg-slate-800 rounded-xl">
+                <p class="text-xs text-slate-400">탐험 진행도</p>
+                <div class="w-full bg-slate-700 h-2 rounded-full mt-2 overflow-hidden">
+                    <div id="progressBar" class="bg-sky-500 h-full w-0 transition-all duration-500"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 메인 콘텐츠: 탐험 지도 -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <header class="flex justify-between items-center mb-10">
+                <div>
+                    <h1 class="text-4xl font-bold mb-2">세계 건축 탐험 지도</h1>
+                    <p class="text-slate-400">원하시는 랜드마크를 클릭하여 비하인드 스토리를 확인하세요.</p>
+                </div>
+                <button onclick="resetData()" class="px-4 py-2 text-xs text-slate-500 hover:text-white transition">데이터 초기화</button>
+            </header>
+
+            <!-- 지도 시뮬레이션 그리드 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 에펠탑 -->
+                <div onclick="explore('에펠탑', '파리, 프랑스', '🗼')" class="map-card glass rounded-3xl p-6 cursor-pointer relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-8 text-6xl opacity-20 group-hover:opacity-40 transition">🗼</div>
+                    <span class="px-3 py-1 bg-sky-500/20 text-sky-400 rounded-full text-xs font-bold">19세기 근대</span>
+                    <h2 class="text-2xl font-bold mt-4">에펠탑</h2>
+                    <p class="text-slate-400 mt-2">파리의 흉물에서 상징이 된 철골의 미학</p>
+                </div>
+
+                <!-- 사그라다 파밀리아 -->
+                <div onclick="explore('사그라다 파밀리아', '바르셀로나, 스페인', '⛪')" class="map-card glass rounded-3xl p-6 cursor-pointer relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-8 text-6xl opacity-20 group-hover:opacity-40 transition">⛪</div>
+                    <span class="px-3 py-1 bg-amber-500/20 text-amber-400 rounded-full text-xs font-bold">모더니즘</span>
+                    <h2 class="text-2xl font-bold mt-4">사그라다 파밀리아</h2>
+                    <p class="text-slate-400 mt-2">가우디가 꿈꾼 자연을 닮은 미완의 성당</p>
+                </div>
+
+                <!-- 부르즈 할리파 -->
+                <div onclick="explore('부르즈 할리파', '두바이, UAE', '🏙️')" class="map-card glass rounded-3xl p-6 cursor-pointer relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-8 text-6xl opacity-20 group-hover:opacity-40 transition">🏙️</div>
+                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold">현대 초고층</span>
+                    <h2 class="text-2xl font-bold mt-4">부르즈 할리파</h2>
+                    <p class="text-slate-400 mt-2">인간의 기술로 닿은 세상에서 가장 높은 곳</p>
+                </div>
+                
+                <!-- 추가 랜드마크들 -->
+                <div onclick="explore('피라미드', '기자, 이집트', '📐')" class="map-card glass rounded-3xl p-6 cursor-pointer relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-8 text-6xl opacity-20 group-hover:opacity-40 transition">📐</div>
+                    <span class="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-xs font-bold">고대 불가사의</span>
+                    <h2 class="text-2xl font-bold mt-4">기자 대피라미드</h2>
+                    <p class="text-slate-400 mt-2">수천 년간 풀리지 않는 고대 건축의 신비</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 탐험 로딩 레이어 -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-slate-950/90 z-50 hidden flex-col items-center justify-center">
+        <div class="w-20 h-20 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+        <p class="text-xl font-bold animate__animated animate__pulse animate__infinite">AI 도슨트가 건축물을 분석 중입니다...</p>
+    </div>
+
+    <!-- 결과 모달 (직접 구현) -->
+    <div id="resultModal" class="fixed inset-0 z-40 hidden flex items-center justify-center p-4 bg-black/60">
+        <div class="glass max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-3xl p-8 animate__animated animate__zoomIn">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <span id="resEmoji" class="text-5xl mb-4 block"></span>
+                    <h2 id="resTitle" class="text-4xl font-bold"></h2>
+                    <p id="resLocation" class="text-sky-400 font-bold"></p>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <h3 class="text-xl font-bold text-slate-200">비하인드 스토리</h3>
+                        <button onclick="speakText()" class="text-sky-400 hover:scale-110 transition"><i class="fa-solid fa-volume-high"></i> 듣기</button>
+                    </div>
+                    <p id="resStory" class="text-slate-300 leading-relaxed text-lg whitespace-pre-wrap"></p>
+                </div>
+                <div class="space-y-6">
+                    <div class="p-6 bg-blue-500/10 rounded-2xl border border-blue-500/20">
+                        <h4 class="font-bold text-blue-400 mb-2"><i class="fa-solid fa-link mr-2"></i>비슷한 기술의 건축물</h4>
+                        <p id="resRelated" class="text-sm text-slate-300"></p>
+                    </div>
+                    <div class="p-6 bg-rose-500/10 rounded-2xl border border-rose-500/20">
+                        <h4 class="font-bold text-rose-400 mb-2"><i class="fa-solid fa-unite mr-2"></i>상반된 철학의 건축물</h4>
+                        <p id="resOpposite" class="text-sm text-slate-300"></p>
+                    </div>
+                    <div id="rewardBox" class="p-6 bg-amber-500/20 rounded-2xl border border-amber-500/40 animate__animated animate__bounceIn hidden">
+                        <p class="text-amber-400 font-bold text-center">🎉 캐릭터 수집 완료!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let collection = JSON.parse(localStorage.getItem('arch_collection') || '[]');
+        
+        function updateUI() {
+            const grid = document.getElementById('characterGrid');
+            grid.innerHTML = '';
+            for(let i=0; i<12; i++) {
+                const char = collection[i];
+                const slot = document.createElement('div');
+                slot.className = `character-slot ${char ? 'character-active' : ''}`;
+                slot.innerHTML = char ? `<span title="${char.name}">${char.emoji}</span>` : '<i class="fa-solid fa-question text-slate-700"></i>';
+                grid.appendChild(slot);
+            }
+            const progress = (collection.length / 12) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+
+        async function explore(name, location, emoji) {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name, location })
+                });
+
+                const data = await response.json();
+                
+                document.getElementById('resEmoji').innerText = emoji;
+                document.getElementById('resTitle').innerText = data.title;
+                document.getElementById('resLocation').innerText = location;
+                document.getElementById('resStory').innerText = data.story;
+                document.getElementById('resRelated').innerText = data.related;
+                document.getElementById('resOpposite').innerText = data.opposite;
+
+                // 캐릭터 수집 로직
+                const isNew = !collection.find(c => c.name === name);
+                if(isNew) {
+                    collection.push({ name, emoji });
+                    localStorage.setItem('arch_collection', JSON.stringify(collection));
+                    document.getElementById('rewardBox').classList.remove('hidden');
+                    updateUI();
+                } else {
+                    document.getElementById('rewardBox').classList.add('hidden');
+                }
+
+                document.getElementById('resultModal').classList.remove('hidden');
+            } catch (error) {
+                Swal.fire('오류', '데이터를 불러오지 못했습니다.', 'error');
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        }
+
+        function speakText() {
+            const text = document.getElementById('resStory').innerText;
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'ko-KR';
+            msg.rate = 1.1;
+            window.speechSynthesis.speak(msg);
+        }
+
+        function closeModal() {
+            document.getElementById('resultModal').classList.add('hidden');
+            window.speechSynthesis.cancel();
+        }
+
+        function resetData() {
+            if(confirm('모든 수집 데이터를 초기화할까요?')) {
+                localStorage.removeItem('arch_collection');
+                collection = [];
+                updateUI();
+            }
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
